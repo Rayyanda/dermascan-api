@@ -1,0 +1,29 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Deploy: push this repo to GitHub, then on Render dashboard choose
+# "New +" -> "Blueprint" and point it at the repo. Render reads this file
+# automatically.
+#
+# NOTE: the persistent disk below requires a paid instance type (Render
+# does not allow disks on the Free plan). Without it, data/dataset,
+# data/models, and the SQLite DB are wiped on every restart/redeploy —
+# fine for demoing the Prediction API with a model already committed to
+# the repo, but not for using the AI Studio's dataset/training features
+# long-term.
+
+services:
+  - type: web
+    name: dermascan-backend
+    runtime: python
+    plan: starter          # free plan cannot attach a persistent disk — see note above
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run.py
+    envVars:
+      - key: DERMASCAN_DATA_DIR
+        value: /var/data
+      - key: RENDER
+        value: "true"
+    disk:
+      name: dermascan-data
+      mountPath: /var/data
+      sizeGB: 5

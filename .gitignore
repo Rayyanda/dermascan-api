@@ -1,0 +1,35 @@
+# === DermaScan Backend .gitignore ===
+#
+# Training photos, per-prediction upload logs, and the local SQLite DB are
+# EXCLUDED — they're either huge (thousands of training images), personal
+# data (uploaded scans), or ephemeral state that shouldn't live in git.
+#
+# data/models/ is intentionally NOT excluded below — the trained .keras
+# file(s) in there ARE meant to be committed, so a fresh deploy (Render
+# free tier included, no persistent disk needed) ships with a working
+# model out of the box. See app/main.py's startup hook, which
+# auto-registers and auto-deploys any .keras file found there.
+
+data/dataset/
+data/uploads/
+data/*.db
+data/*.db-journal
+
+# Keep the folder itself tracked even if empty, and keep model files.
+!data/dataset/.gitkeep
+!data/uploads/.gitkeep
+!data/models/
+!data/models/.gitkeep
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# --- Editor / OS ---
+.vscode/
+.idea/
+.DS_Store

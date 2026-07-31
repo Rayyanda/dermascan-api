@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DermaScan AI Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><span class="scan-line"></span></div>
+      <div class="brand-text">
+        <div class="brand-name">DermaScan</div>
+        <div class="brand-sub">AI STUDIO</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-item active" data-view="dashboard">
+        <span class="nav-idx">01</span> Dashboard
+      </button>
+      <button class="nav-item" data-view="dataset">
+        <span class="nav-idx">02</span> Dataset Manager
+      </button>
+      <button class="nav-item" data-view="training">
+        <span class="nav-idx">03</span> Training
+      </button>
+      <button class="nav-item" data-view="models">
+        <span class="nav-idx">04</span> Models &amp; Deployment
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="footer-label">PIPELINE STATUS</div>
+      <div class="footer-value" id="pipeline-status">idle</div>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="view active" id="view-dashboard">
+      <header class="view-header">
+        <h1>Dashboard</h1>
+        <p>Current state of the DermaScan machine-learning pipeline.</p>
+      </header>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Dataset Images</div>
+          <div class="stat-value mono" id="stat-total-images">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Training Runs</div>
+          <div class="stat-value mono" id="stat-total-runs">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Predictions Served</div>
+          <div class="stat-value mono" id="stat-total-predictions">—</div>
+        </div>
+        <div class="stat-card accent">
+          <div class="stat-label">Deployed Model</div>
+          <div class="stat-value mono" id="stat-deployed-model">—</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Last Training Run</h2>
+        </div>
+        <div class="panel-body" id="last-run-body">
+          <p class="muted">No training runs yet.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DATASET ============ -->
+    <section class="view" id="view-dataset">
+      <header class="view-header">
+        <h1>Dataset Manager</h1>
+        <p>Upload verified lesion images per class. HAM10000 taxonomy, 7 classes.</p>
+      </header>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Upload Images</h2></div>
+        <div class="panel-body">
+          <form id="upload-form" class="upload-form">
+            <label class="field">
+              <span>Class</span>
+              <select id="upload-class" required></select>
+            </label>
+            <label class="field">
+              <span>Images</span>
+              <input type="file" id="upload-files" multiple accept="image/*" required />
+            </label>
+            <button type="submit" class="btn btn-primary">Upload</button>
+          </form>
+          <div id="upload-result" class="upload-result"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Sync From Folder</h2></div>
+        <div class="panel-body">
+          <p class="muted small">
+            Got a lot of images (e.g. the full HAM10000 set)? Skip the upload form —
+            copy them straight into <code>data/dataset/&lt;class_label&gt;/</code> on
+            disk, then click below to register everything new.
+          </p>
+          <button id="sync-btn" class="btn btn-secondary">Sync Dataset</button>
+          <div id="sync-result" class="upload-result"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Class Distribution</h2></div>
+        <div class="panel-body">
+          <table class="data-table" id="class-table">
+            <thead>
+              <tr><th>Class</th><th>Label</th><th>Images</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <p class="muted small" id="ready-status"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TRAINING ============ -->
+    <section class="view" id="view-training">
+      <header class="view-header">
+        <h1>Training</h1>
+        <p>Manual retraining workflow — configure hyperparameters and start a run.</p>
+      </header>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Start Training</h2></div>
+        <div class="panel-body">
+          <form id="training-form" class="training-form">
+            <label class="field">
+              <span>Epochs</span>
+              <input type="number" id="train-epochs" value="30" min="1" max="200" />
+            </label>
+            <label class="field">
+              <span>Batch Size</span>
+              <input type="number" id="train-batch" value="32" min="4" max="256" />
+            </label>
+            <label class="field">
+              <span>Learning Rate</span>
+              <input type="number" id="train-lr" value="0.0001" step="0.0001" min="0.00001" />
+            </label>
+            <button type="submit" class="btn btn-primary">Start Training</button>
+          </form>
+          <p class="muted small">Base architecture: EfficientNetB0 · Input 224×224</p>
+          <div id="training-message" class="upload-result"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Training History</h2></div>
+        <div class="panel-body">
+          <table class="data-table" id="training-table">
+            <thead>
+              <tr><th>Run</th><th>Status</th><th>Epochs</th><th>Val Acc</th><th>Val Loss</th><th>Started</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MODELS ============ -->
+    <section class="view" id="view-models">
+      <header class="view-header">
+        <h1>Models &amp; Deployment</h1>
+        <p>Exported model versions. Deploy one to make it live for the Flutter Prediction API.</p>
+      </header>
+
+      <div class="panel">
+        <div class="panel-body">
+          <table class="data-table" id="models-table">
+            <thead>
+              <tr><th>Model</th><th>Val Acc</th><th>Created</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
