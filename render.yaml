@@ -11,19 +11,33 @@
 # the repo, but not for using the AI Studio's dataset/training features
 # long-term.
 
+# services:
+#   - type: web
+#     name: dermascan-backend
+#     runtime: python
+#     plan: starter          # free plan cannot attach a persistent disk — see note above
+#     buildCommand: pip install -r requirements.txt
+#     startCommand: python run.py
+#     envVars:
+#       - key: DERMASCAN_DATA_DIR
+#         value: /var/data
+#       - key: RENDER
+#         value: "true"
+#     disk:
+#       name: dermascan-data
+#       mountPath: /var/data
+#       sizeGB: 5
 services:
   - type: web
     name: dermascan-backend
     runtime: python
-    plan: starter          # free plan cannot attach a persistent disk — see note above
-    buildCommand: pip install -r requirements.txt
-    startCommand: python run.py
+    region: singapore
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT"
     envVars:
-      - key: DERMASCAN_DATA_DIR
-        value: /var/data
-      - key: RENDER
-        value: "true"
-    disk:
-      name: dermascan-data
-      mountPath: /var/data
-      sizeGB: 5
+    - key: PYTHON_VERSION
+      value: "3.13.1"
+    - key: TF_CPP_MIN_LOG_LEVEL
+      value: "3"
+    - key: TF_ENABLE_ONEDNN_OPTS
+      value: "0"
