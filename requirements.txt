@@ -1,11 +1,23 @@
-fastapi==0.135.2
-uvicorn[standard]==0.29.0
-python-multipart==0.0.9
-tensorflow==2.20.0
-sqlalchemy==2.0.30
-pydantic==2.12.5
-pillow==10.3.0
-numpy==2.2.6
-scikit-learn==1.5.0
-openpyxl==3.1.0    # only needed if your label sheet is .xlsx instead of .csv
+# fastapi==0.135.2
+# uvicorn[standard]==0.29.0
+# python-multipart==0.0.9
+# tensorflow==2.20.0
+# sqlalchemy==2.0.30
+# pydantic==2.12.5
+# pillow==10.3.0
+# numpy==2.2.6
+# scikit-learn==1.5.0
+# openpyxl==3.1.0    # only needed if your label sheet is .xlsx instead of .csv
+# gunicorn>=22.0.0    # only needed for Render deployment (production ASGI process manager)
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.1
+python-multipart>=0.0.9
+sqlalchemy>=2.0.30
+pydantic>=2.7.4
+tensorflow>=2.16.1
+pillow>=10.3.0
+numpy>=1.26.4
+scikit-learn>=1.5.0
+openpyxl>=3.1.0    # only needed if your label sheet is .xlsx instead of .csv
+# a2wsgi>=1.10.0      # only needed for cPanel/Passenger deployment (ASGI-to-WSGI bridge)
 gunicorn>=22.0.0    # only needed for Render deployment (production ASGI process manager)
