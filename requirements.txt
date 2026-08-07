@@ -21,3 +21,6 @@ scikit-learn>=1.5.0
 openpyxl>=3.1.0    # only needed if your label sheet is .xlsx instead of .csv
 # a2wsgi>=1.10.0      # only needed for cPanel/Passenger deployment (ASGI-to-WSGI bridge)
 gunicorn>=22.0.0    # only needed for Render deployment (production ASGI process manager)
+bcrypt>=4.1.0       # password hashing
+pyjwt>=2.9.0        # JWT auth tokens
+email-validator>=2.2.0  # validates email format in register/login requests

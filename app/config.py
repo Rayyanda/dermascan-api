@@ -88,6 +88,17 @@ BASE_ARCHITECTURE = "EfficientNetB0"
 MIN_IMAGES_PER_CLASS_TO_TRAIN = 5
 
 # ---------------------------------------------------------------------------
+# Auth (JWT) — for Flutter app end users only. The AI Studio web dashboard
+# is intentionally left open/unauthenticated (internal tool, per project
+# scope). Set JWT_SECRET_KEY via env var in production — the fallback here
+# is only for local development and is NOT safe to use as-is in production.
+# ---------------------------------------------------------------------------
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-only-change-me-in-production")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", 60 * 24 * 30))  # 30 days, mobile-app friendly
+MIN_PASSWORD_LENGTH = 8
+
+# ---------------------------------------------------------------------------
 # Misc
 # ---------------------------------------------------------------------------
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp"}

@@ -7,7 +7,7 @@ should be implemented to match these shapes exactly.
 import datetime as dt
 from typing import Optional, List, Dict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 
 
 # ---------------------------------------------------------------------------
@@ -18,6 +18,43 @@ class ClassStat(BaseModel):
     short_label: str
     full_label: str
     image_count: int
+    
+class UserRegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    full_name: str = Field(min_length=1, max_length=120)
+
+
+class UserLoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserOut(BaseModel):
+    id: int
+    email: str
+    full_name: str
+    created_at: dt.datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+
+class PredictionHistoryItem(BaseModel):
+    prediction_id: int
+    predicted_class: str
+    short_label: str
+    full_label: str
+    malignant_potential: str
+    confidence: float
+    is_dummy_prediction: bool
+    created_at: dt.datetime
 
 
 class DatasetStatsResponse(BaseModel):

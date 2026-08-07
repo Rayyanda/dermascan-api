@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import APP_TITLE, APP_VERSION, BASE_DIR
 from app.database import init_db, SessionLocal
 from app.services import model_service
-from app.routers import dataset, training, models, prediction, dashboard
+from app.routers import dataset, training, models, prediction, dashboard, auth
 
 app = FastAPI(title=APP_TITLE, version=APP_VERSION)
 
@@ -53,6 +53,7 @@ app.include_router(training.router)
 app.include_router(models.router)
 app.include_router(prediction.router)
 app.include_router(dashboard.router)
+app.include_router(auth.router)
 
 
 @app.get("/api/health", tags=["Health"])

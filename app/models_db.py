@@ -24,6 +24,16 @@ class TrainingStatus(str, enum.Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    full_name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=dt.datetime.utcnow)
+
+    predictions = relationship("PredictionLog", back_populates="user")
 
 class DatasetImage(Base):
     __tablename__ = "dataset_images"
@@ -97,6 +107,9 @@ class PredictionLog(Base):
     predicted_class = Column(String, nullable=False)
     confidence = Column(Float, nullable=False)
     all_probabilities_json = Column(Text, nullable=False)
+    
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    user = relationship("User", back_populates="predictions")
 
     model_version_id = Column(Integer, ForeignKey("model_versions.id"), nullable=True)
     is_dummy_prediction = Column(Boolean, default=False)  # true if no model was deployed yet
