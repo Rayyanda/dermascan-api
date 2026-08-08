@@ -1,41 +1,60 @@
 """
-Prediction API — the endpoints the Flutter app (DermaScan+) actually calls.
-Requires login (Authorization: Bearer <token>) — every prediction is tied
-to the authenticated user, and users can only see their own history.
+Prediction API for the Flutter app (DermaScan+) — matches the existing
+Dart client (api_service.dart) exactly:
+  - Routes at the ROOT level (no /api prefix): /health, /predict, /feedback
+  - user_id is optional and sent as a plain multipart form field (no auth
+    check that it actually belongs to whoever is asking — see the trade-off
+    noted in app/config.py)
+  - /predict returns HTTP 200 with {"success": false, "error": "..."} for
+    handled/expected failures (bad file type, etc), reserving non-200 only
+    for things Flutter explicitly branches on (500 = real server error).
 """
 
 import shutil
 import uuid
 import json
-import datetime as dt
-from typing import List
+from pathlib import Path
+from typing import Optional
 
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, Form
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.config import CLASS_INFO, UPLOADS_DIR, ALLOWED_IMAGE_EXTENSIONS
-from app.schemas import PredictionResponse, ClassProbability, PredictionHistoryItem
+from app.schemas import FeedbackRequest
 from app.services import model_service
-from app.models_db import PredictionLog, User
+from app.models_db import PredictionLog
 from app.ml.infer import predict_image
-from app.dependencies import get_current_user
-from pathlib import Path
 
-router = APIRouter(prefix="/api/predict", tags=["Prediction API (Flutter)"])
+router = APIRouter(tags=["Prediction API (Flutter)"])  # deliberately no prefix
 
 
-@router.post("", response_model=PredictionResponse)
+def _risk_level(malignant_potential: str) -> str:
+    return {"benign": "low", "pre-malignant": "medium", "malignant": "high"}.get(
+        malignant_potential, "low"
+    )
+
+
+@router.get("/health")
+def health(db: Session = Depends(get_db)):
+    deployed = model_service.get_deployed_model(db)
+    return {"status": "ok", "model_loaded": deployed is not None}
+
+
+@router.post("/predict")
 def predict(
     image: UploadFile = File(...),
+    user_id: Optional[int] = Form(default=None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
     ext = Path(image.filename).suffix.lower()
     if ext not in ALLOWED_IMAGE_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type '{ext}'.")
+        return JSONResponse(
+            status_code=200,
+            content={"success": False, "error": f"Tipe file '{ext}' tidak didukung."},
+        )
 
-    # Save the incoming image temporarily (also useful as an audit trail).
     stored_name = f"{uuid.uuid4().hex}{ext}"
     stored_path = UPLOADS_DIR / stored_name
     with stored_path.open("wb") as buffer:
@@ -46,69 +65,55 @@ def predict(
 
     predicted_class, prob_dict, is_dummy = predict_image(str(stored_path), deployed_path)
     class_info = CLASS_INFO[predicted_class]
-
-    all_probs = [
-        ClassProbability(
-            class_label=cls,
-            short_label=CLASS_INFO[cls]["short_label"],
-            full_label=CLASS_INFO[cls]["label"],
-            probability=round(prob, 6),
-        )
-        for cls, prob in sorted(prob_dict.items(), key=lambda kv: kv[1], reverse=True)
-    ]
+    confidence = prob_dict[predicted_class]
 
     log = PredictionLog(
         original_filename=image.filename,
         stored_path=str(stored_path),
         predicted_class=predicted_class,
-        confidence=prob_dict[predicted_class],
+        confidence=confidence,
         all_probabilities_json=json.dumps(prob_dict),
         model_version_id=deployed.id if deployed else None,
         is_dummy_prediction=is_dummy,
-        user_id=current_user.id,
+        user_id=user_id,
         client="flutter",
     )
     db.add(log)
     db.commit()
     db.refresh(log)
 
-    return PredictionResponse(
-        predicted_class=predicted_class,
-        short_label=class_info["short_label"],
-        full_label=class_info["label"],
-        malignant_potential=class_info["malignant_potential"],
-        confidence=round(prob_dict[predicted_class], 6),
-        all_probabilities=all_probs,
-        is_dummy_prediction=is_dummy,
-        model_version_id=deployed.id if deployed else None,
-        prediction_id=log.id,
-        created_at=log.created_at,
-    )
-
-
-@router.get("/history", response_model=List[PredictionHistoryItem])
-def prediction_history(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Only ever returns the logged-in user's own predictions."""
-    logs = (
-        db.query(PredictionLog)
-        .filter(PredictionLog.user_id == current_user.id)
-        .order_by(PredictionLog.created_at.desc())
-        .limit(200)
-        .all()
-    )
-    return [
-        PredictionHistoryItem(
-            prediction_id=log.id,
-            predicted_class=log.predicted_class,
-            short_label=CLASS_INFO[log.predicted_class]["short_label"],
-            full_label=CLASS_INFO[log.predicted_class]["label"],
-            malignant_potential=CLASS_INFO[log.predicted_class]["malignant_potential"],
-            confidence=round(log.confidence, 6),
-            is_dummy_prediction=log.is_dummy_prediction,
-            created_at=log.created_at,
-        )
-        for log in logs
+    all_predictions = [
+        {"class": cls, "confidence": round(prob, 6)}
+        for cls, prob in sorted(prob_dict.items(), key=lambda kv: kv[1], reverse=True)
     ]
+
+    return {
+        "success": True,
+        "prediction": {
+            "class": predicted_class,
+            "confidence": round(confidence, 6),
+            "confidence_percentage": f"{confidence * 100:.2f}%",
+            "risk_level": _risk_level(class_info["malignant_potential"]),
+        },
+        "all_predictions": all_predictions,
+        "disclaimer": (
+            "DermaScan is intended for educational purposes and preliminary "
+            "screening only. It is not a medical diagnostic tool."
+        ),
+        "upload_id": log.id,
+    }
+
+
+@router.post("/feedback")
+def feedback(payload: FeedbackRequest, db: Session = Depends(get_db)):
+    log = db.query(PredictionLog).get(payload.upload_id)
+    if log is None:
+        return JSONResponse(status_code=404, content={"success": False, "error": "upload_id tidak ditemukan."})
+
+    log.reviewed = True
+    log.is_correct = payload.is_correct
+    if payload.notes:
+        log.feedback_notes = payload.notes
+    db.commit()
+
+    return {"success": True}

@@ -88,15 +88,18 @@ BASE_ARCHITECTURE = "EfficientNetB0"
 MIN_IMAGES_PER_CLASS_TO_TRAIN = 5
 
 # ---------------------------------------------------------------------------
-# Auth (JWT) — for Flutter app end users only. The AI Studio web dashboard
-# is intentionally left open/unauthenticated (internal tool, per project
-# scope). Set JWT_SECRET_KEY via env var in production — the fallback here
-# is only for local development and is NOT safe to use as-is in production.
+# Auth — Flutter app users. Deliberately simple per project scope: plain
+# username/password, hashed with bcrypt. No token — the Flutter app just
+# holds onto the numeric user id after login/register (query fields on
+# /predict, path param on /user/{id}, etc).
+#
+# NOTE: this means any client that knows or guesses a user_id can read that
+# user's profile/history or attribute a prediction to them — there's no
+# verification tying a request to a specific logged-in session. Acceptable
+# for this project's current scope; upgrade to token-based auth if this
+# ever needs to hold data that matters being kept private for real.
 # ---------------------------------------------------------------------------
-JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-only-change-me-in-production")
-JWT_ALGORITHM = "HS256"
-JWT_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", 60 * 24 * 30))  # 30 days, mobile-app friendly
-MIN_PASSWORD_LENGTH = 8
+MIN_PASSWORD_LENGTH = 6
 
 # ---------------------------------------------------------------------------
 # Misc

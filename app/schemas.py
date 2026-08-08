@@ -7,7 +7,7 @@ should be implemented to match these shapes exactly.
 import datetime as dt
 from typing import Optional, List, Dict
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 
 
 # ---------------------------------------------------------------------------
@@ -19,42 +19,32 @@ class ClassStat(BaseModel):
     full_label: str
     image_count: int
     
-class UserRegisterRequest(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=8)
-    full_name: str = Field(min_length=1, max_length=120)
+# class UserRegisterRequest(BaseModel):
+#     email: EmailStr
+#     password: str = Field(min_length=8)
+#     full_name: str = Field(min_length=1, max_length=120)
 
 
-class UserLoginRequest(BaseModel):
-    email: EmailStr
-    password: str
+# class UserLoginRequest(BaseModel):
+#     email: EmailStr
+#     password: str
 
 
-class UserOut(BaseModel):
-    id: int
-    email: str
-    full_name: str
-    created_at: dt.datetime
+# class UserOut(BaseModel):
+#     id: int
+#     email: str
+#     full_name: str
+#     created_at: dt.datetime
 
-    class Config:
-        from_attributes = True
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    user: UserOut
+#     class Config:
+#         from_attributes = True
 
 
-class PredictionHistoryItem(BaseModel):
-    prediction_id: int
-    predicted_class: str
-    short_label: str
-    full_label: str
-    malignant_potential: str
-    confidence: float
-    is_dummy_prediction: bool
-    created_at: dt.datetime
+# class TokenResponse(BaseModel):
+#     access_token: str
+#     token_type: str = "bearer"
+#     user: UserOut
+
 
 
 class DatasetStatsResponse(BaseModel):
@@ -147,30 +137,51 @@ class DeployResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Prediction  (the contract the Flutter app talks to)
 # ---------------------------------------------------------------------------
-class ClassProbability(BaseModel):
-    class_label: str          # "mel"
-    short_label: str          # "MEL"
-    full_label: str           # "Melanoma"
-    probability: float        # 0.0 - 1.0
+# class ClassProbability(BaseModel):
+#     class_label: str          # "mel"
+#     short_label: str          # "MEL"
+#     full_label: str           # "Melanoma"
+#     probability: float        # 0.0 - 1.0
 
 
-class PredictionResponse(BaseModel):
-    predicted_class: str
-    short_label: str
-    full_label: str
-    malignant_potential: str        # "benign" | "pre-malignant" | "malignant"
-    confidence: float               # top-1 probability, 0.0 - 1.0
-    all_probabilities: List[ClassProbability]
-    is_dummy_prediction: bool       # true if no trained model has been deployed yet
-    model_version_id: Optional[int]
-    disclaimer: str = (
-        "DermaScan is intended for educational purposes and preliminary "
-        "screening only. It is not a medical diagnostic tool."
-    )
-    prediction_id: int
-    created_at: dt.datetime
+# class PredictionResponse(BaseModel):
+#     predicted_class: str
+#     short_label: str
+#     full_label: str
+#     malignant_potential: str        # "benign" | "pre-malignant" | "malignant"
+#     confidence: float               # top-1 probability, 0.0 - 1.0
+#     all_probabilities: List[ClassProbability]
+#     is_dummy_prediction: bool       # true if no trained model has been deployed yet
+#     model_version_id: Optional[int]
+#     disclaimer: str = (
+#         "DermaScan is intended for educational purposes and preliminary "
+#         "screening only. It is not a medical diagnostic tool."
+#     )
+#     prediction_id: int
+#     created_at: dt.datetime
+
+class RegisterRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+    password: str = Field(min_length=6)
+    full_name: str = Field(min_length=1, max_length=120)
+    birth_date: Optional[str] = None
+    gender: Optional[str] = None
+    weight: Optional[float] = None
+    height: Optional[float] = None
+    medical_history: Optional[str] = None
+    family_history: Optional[str] = None
+    outdoor_activity: Optional[str] = None
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class FeedbackRequest(BaseModel):
+    upload_id: int
+    is_correct: bool
+    notes: Optional[str] = None
 # ---------------------------------------------------------------------------
 # Dashboard (AI Studio home)
 # ---------------------------------------------------------------------------

@@ -28,10 +28,18 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
+    username = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     full_name = Column(String, nullable=False)
+    birth_date = Column(String, nullable=True)
+    gender = Column(String, nullable=True)
+    weight = Column(Float, nullable=True)   # kg
+    height = Column(Float, nullable=True)   # cm
+    medical_history = Column(Text, nullable=True)
+    family_history = Column(Text, nullable=True)
+    outdoor_activity = Column(String, nullable=True)
     created_at = Column(DateTime, default=dt.datetime.utcnow)
+    last_login = Column(DateTime, nullable=True)
 
     predictions = relationship("PredictionLog", back_populates="user")
 
@@ -116,3 +124,8 @@ class PredictionLog(Base):
 
     client = Column(String, default="flutter")  # which client made the request
     created_at = Column(DateTime, default=dt.datetime.utcnow)
+    
+    reviewed = Column(Boolean, default=False)
+    is_correct = Column(Boolean, nullable=True)
+    actual_class = Column(String, nullable=True)
+    feedback_notes = Column(Text, nullable=True)
